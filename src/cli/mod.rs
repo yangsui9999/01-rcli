@@ -1,10 +1,13 @@
 mod base64;
 mod csv;
 mod genpass;
+mod text;
+use std::path::{Path, PathBuf};
 
 pub use self::{
     base64::{Base64Format, Base64SubCommand},
     csv::OutputFormat,
+    text::{TextSignFormat, TextSubCommand},
 };
 use self::{csv::CvsOpts, genpass::GenPassOpts};
 
@@ -29,9 +32,12 @@ pub enum SubCommand {
 
     #[command(subcommand)]
     Base64(Base64SubCommand),
+
+    #[command(subcommand)]
+    Text(TextSubCommand),
 }
 
-fn verify_input_file(filename: &str) -> Result<String, anyhow::Error> {
+fn verify_file(filename: &str) -> Result<String, anyhow::Error> {
     // if input is "-" or file exists
     if filename == "-" || std::path::Path::new(filename).exists() {
         Ok(filename.into())
@@ -40,16 +46,26 @@ fn verify_input_file(filename: &str) -> Result<String, anyhow::Error> {
     }
 }
 
-// generate test for verify_input_file
+fn verify_path(path: &str) -> Result<PathBuf, anyhow::Error> {
+    // if input is "-" or file exists
+    let p = Path::new(path);
+    if p.exists() && p.is_dir() {
+        Ok(path.into())
+    } else {
+        anyhow::bail!("Path does not exist or is not a directory");
+    }
+}
+
+// generate test for verify_file
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_verify_input_file() {
-        assert!(verify_input_file("-").is_ok());
-        assert!(verify_input_file("*").is_err());
-        assert!(verify_input_file("Cargo.toml").is_ok());
-        assert!(verify_input_file("not-exist").is_err());
+        assert!(verify_file("-").is_ok());
+        assert!(verify_file("*").is_err());
+        assert!(verify_file("Cargo.toml").is_ok());
+        assert!(verify_file("not-exist").is_err());
     }
 }
